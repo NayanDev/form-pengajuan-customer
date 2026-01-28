@@ -14,6 +14,15 @@ class TempMonitoring extends Model
     protected $fillable = ["location_id","description"];
     protected $appends = ['btn_print', 'btn_delete', 'btn_edit', 'btn_show'];
 
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function readings()
+    {
+        return $this->hasMany(MonitoringReading::class, 'monitoring_point_id');
+    }
 
     public function getBtnPrintAttribute()
     {

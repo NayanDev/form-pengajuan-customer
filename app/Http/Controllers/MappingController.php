@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CategoryMapping;
 use App\Models\Location;
 use App\Models\Mapping;
+use App\Models\MappingStudyPoint;
 use App\Models\MappingStudyReading;
 use App\Models\MonitoringReading;
 use App\Models\TempMonitoring;
@@ -62,6 +63,58 @@ class MappingController extends DefaultController
     }
 
 
+    public function index()
+    {
+        $baseUrlExcel = route($this->generalUri.'.export-excel-default');
+        $baseUrlPdf = route($this->generalUri.'.export-pdf-default');
+
+        $moreActions = [
+            [
+                'key' => 'import-excel-default',
+                'name' => 'Import Excel',
+                'html_button' => "<button id='import-excel' type='button' class='btn btn-sm btn-info radius-6' href='#' data-bs-toggle='modal' data-bs-target='#modalImportDefault' title='Import Excel' ><i class='ti ti-upload'></i></button>"
+            ],
+            [
+                'key' => 'export-excel-default',
+                'name' => 'Export Excel',
+                'html_button' => "<a id='export-excel' data-base-url='".$baseUrlExcel."' class='btn btn-sm btn-success radius-6' target='_blank' href='" . url($this->generalUri . '-export-excel-default') . "'  title='Export Excel'><i class='ti ti-cloud-download'></i></a>"
+            ],
+            [
+                'key' => 'export-pdf-default',
+                'name' => 'Export Pdf',
+                'html_button' => "<a id='export-pdf' data-base-url='".$baseUrlPdf."' class='btn btn-sm btn-danger radius-6' target='_blank' href='" . url($this->generalUri . '-export-pdf-default') . "' title='Export PDF'><i class='ti ti-file'></i></a>"
+            ],
+        ];
+
+        $permissions =  $this->arrPermissions;
+        if ($this->dynamicPermission) {
+            $permissions = (new Constant())->permissionByMenu($this->generalUri);
+        }
+        $layout = (request('from_ajax') && request('from_ajax') == true) ? 'easyadmin::backend.idev.list_drawer_ajax' : 'easyadmin::backend.idev.list_drawer';
+        if(isset($this->drawerLayout)){
+            $layout = $this->drawerLayout;
+        }
+        $data['permissions'] = $permissions;
+        $data['more_actions'] = $moreActions;
+        $data['headerLayout'] = $this->pageHeaderLayout;
+        $data['table_headers'] = $this->tableHeaders;
+        $data['title'] = $this->title;
+        $data['uri_key'] = $this->generalUri;
+        $data['uri_list_api'] = route($this->generalUri . '.listapi');
+        $data['uri_create'] = route($this->generalUri . '.create');
+        $data['url_store'] = route($this->generalUri . '.store');
+        $data['fields'] = $this->fields();
+        $data['edit_fields'] = $this->fields('edit');
+        $data['actionButtonViews'] = $this->actionButtonViews;
+        $data['templateImportExcel'] = "#";
+        $data['import_scripts'] = $this->importScripts;
+        $data['import_styles'] = $this->importStyles;
+        $data['filters'] = $this->filters();
+        
+        return view($layout, $data);
+    }
+
+
     protected function fields($mode = "create", $id = '-')
     {
         $edit = null;
@@ -114,6 +167,16 @@ class MappingController extends DefaultController
         $orThose = request('search');
         $orderBy = request('order', 'locations.id');
         $orderState = request('order_state', 'DESC');
+        if(request('search')) {
+            $orThose = request('search');
+        }
+        if(request('order')) {
+            $orderBy = request('order');
+            $orderState = request('order_state');
+        }
+        if(request('mapping_study')) {
+            $filters[] = ['mapping_study_points.mapping_study_id', '=', request('mapping_study')];
+        }
 
         return Mapping::join('mapping_studies', 'mapping_studies.id', '=', 'mapping_study_points.mapping_study_id')
             ->join('locations', 'locations.id', '=', 'mapping_study_points.location_id')
@@ -215,14 +278,14 @@ class MappingController extends DefaultController
         $location = Location::with('warehouse')->findOrFail($locationId);
         
         // Get mapping study point for this location
-        $mappingPoint = \App\Models\MappingStudyPoint::where('location_id', $locationId)->first();
+        $mappingPoint = MappingStudyPoint::where('location_id', $locationId)->first();
         
         if (!$mappingPoint) {
             abort(404, 'Mapping point not found');
         }
 
         // Get all readings for this month
-        $readings = \App\Models\MappingStudyReading::with('user')
+        $readings = MappingStudyReading::with('user')
             ->where('mapping_study_point_id', $mappingPoint->id)
             ->whereYear('recorded_at', $year)
             ->whereMonth('recorded_at', $month)
@@ -250,7 +313,11 @@ class MappingController extends DefaultController
     {
         $idMapStudy = request('mapping_study');
         $category = request('category');
+        $year = request('year', now()->year);
+        $month = request('month', now()->month);
+        
         if($category === 'mapping') {
+            $titleSuhu = "Mapping Suhu";
             $mappingStudy = Mapping::findOrfail($idMapStudy);
             $mappingStudyReading = Mapping::where('id', $idMapStudy)->get();
 
@@ -264,11 +331,19 @@ class MappingController extends DefaultController
             $avgValue = $readings->avg();
 
         } elseif($category === 'monitoring') {
-            $mappingStudy = TempMonitoring::findOrfail($idMapStudy);
+            $titleSuhu = "Monitoring Suhu";
+            $mappingStudy = TempMonitoring::with(['readings' => function($query) use ($year, $month) {
+                $query->with('user')
+                    ->whereYear('recorded_at', $year)
+                    ->whereMonth('recorded_at', $month)
+                    ->orderBy('recorded_at');
+            }, 'location.warehouse'])->findOrfail($idMapStudy);
             $mappingStudyReading = TempMonitoring::where('id', $idMapStudy)->first();
 
             // Hitung min, max, avg dari monitoring reading
             $readings = MonitoringReading::where('monitoring_point_id', $mappingStudyReading->id)
+                ->whereYear('recorded_at', $year)
+                ->whereMonth('recorded_at', $month)
                 ->pluck('value');
 
             $minValue = $readings->min();
@@ -310,7 +385,7 @@ class MappingController extends DefaultController
         $data['more_actions'] = $moreActions;
         $data['headerLayout'] = $this->pageHeaderLayout;
         $data['table_headers'] = $this->tableHeaders;
-        $data['title'] = $this->title;
+        $data['title'] = $titleSuhu;
         $data['uri_key'] = $this->generalUri;
         $data['uri_list_api'] = route($this->generalUri . '.listapi');
         $data['uri_create'] = route($this->generalUri . '.create');
@@ -330,6 +405,28 @@ class MappingController extends DefaultController
         $data['avg_value'] = $avgValue;
         
         return view($layout, $data);
+    }
+
+
+    protected function filters()
+    {
+        $isMapping = CategoryMapping::get();
+        $arrMapping = [];
+        $arrMapping[] = ['value' => '', 'text' => 'All Mapping Studies'];
+        foreach($isMapping as $key => $mapping) {
+            $arrMapping[] = ['value' => $mapping->id, 'text' => $mapping->name];
+        }
+        $fields = [
+            [
+                'type' => 'select',
+                'label' => 'Mapping Study',
+                'name' => 'mapping_study',
+                'class' => 'col-md-2',
+                'options' => $arrMapping,
+            ],
+        ];
+
+        return $fields;
     }
 
 }

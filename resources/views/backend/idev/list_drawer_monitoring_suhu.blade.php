@@ -55,31 +55,32 @@
                                             </table>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    {{-- <tr>
                                         <td width="10%" rowspan="3" class="border text-center">Tgl</td>
                                         <td class="border text-center">
                                             <strong>
                                                 <span>MIN</span> <br>
-                                                {{-- {{ $min_value }} --}}
+                                                {{ isset($min_value) ? number_format($min_value, 1) . ' °C' : '-' }}
                                             </strong>
                                         </td>
                                         <td class="border text-center">
                                             <strong>
                                                 <span>MAX</span> <br>
-                                                {{-- {{ $max_value }} --}}
+                                                {{ isset($max_value) ? number_format($max_value, 1) . ' °C' : '-' }}
                                             </strong>
                                         </td>
                                         <td class="border text-center">
                                             <strong>
                                                 <span>AVG</span> <br>
-                                                {{-- {{ $avg_value }} --}}
+                                                {{ isset($avg_value) ? number_format($avg_value, 1) . ' °C' : '-' }}
                                             </strong>
                                         </td>
-                                    </tr>
+                                    </tr> --}}
                                     <tr>
-                                        <td width="20%" class="border text-center">Checking Jam 09.00</td>
-                                        <td width="20%" class="border text-center">Checking Jam 13.00</td>
-                                        <td width="20%" class="border text-center">Checking Jam 16.00</td>
+                                        <td width="10%" rowspan="2" class="border text-center">Tgl</td>
+                                        <td width="20%" class="border text-center">09.00</td>
+                                        <td width="20%" class="border text-center">13.00</td>
+                                        <td width="20%" class="border text-center">16.00</td>
                                     </tr>
                                     <tr>
                                         <td class="border text-center">T (°C)</td>
@@ -92,29 +93,58 @@
                                         $year = request('year', now()->year);
                                         $month = request('month', now()->month);
                                         $daysInMonth = \Carbon\Carbon::create($year, $month)->daysInMonth;
+                                        $category = request('category');
                                         
                                         // Group readings by date and hour
                                         $groupedReadings = [];
-                                        foreach($mapping_study->mappings as $mapping) {
-                                            $date = \Carbon\Carbon::parse($mapping->recorded_at);
-                                            $day = $date->day;
-                                            $hour = (int) $date->format('H');
-                                            
-                                            if (!isset($groupedReadings[$day])) {
-                                                $groupedReadings[$day] = [
-                                                    9 => null,
-                                                    13 => null,
-                                                    16 => null
-                                                ];
+                                        
+                                        if($category === 'monitoring') {
+                                            // Untuk kategori monitoring, gunakan readings dari MonitoringPoint
+                                            foreach($mapping_study->readings as $reading) {
+                                                $date = \Carbon\Carbon::parse($reading->recorded_at);
+                                                $day = $date->day;
+                                                $hour = (int) $date->format('H');
+                                                
+                                                if (!isset($groupedReadings[$day])) {
+                                                    $groupedReadings[$day] = [
+                                                        9 => null,
+                                                        13 => null,
+                                                        16 => null
+                                                    ];
+                                                }
+                                                
+                                                // Map to closest time slot
+                                                if ($hour >= 0 && $hour < 12) {
+                                                    $groupedReadings[$day][9] = $reading;
+                                                } elseif ($hour >= 12 && $hour < 15) {
+                                                    $groupedReadings[$day][13] = $reading;
+                                                } else {
+                                                    $groupedReadings[$day][16] = $reading;
+                                                }
                                             }
-                                            
-                                            // Map to closest time slot
-                                            if ($hour >= 0 && $hour < 12) {
-                                                $groupedReadings[$day][9] = $mapping;
-                                            } elseif ($hour >= 12 && $hour < 15) {
-                                                $groupedReadings[$day][13] = $mapping;
-                                            } else {
-                                                $groupedReadings[$day][16] = $mapping;
+                                        } else {
+                                            // Untuk kategori mapping, gunakan mappings seperti biasa
+                                            foreach($mapping_study->mappings as $mapping) {
+                                                $date = \Carbon\Carbon::parse($mapping->recorded_at);
+                                                $day = $date->day;
+                                                $hour = (int) $date->format('H');
+                                                
+                                                if (!isset($groupedReadings[$day])) {
+                                                    $groupedReadings[$day] = [
+                                                        9 => null,
+                                                        13 => null,
+                                                        16 => null
+                                                    ];
+                                                }
+                                                
+                                                // Map to closest time slot
+                                                if ($hour >= 0 && $hour < 12) {
+                                                    $groupedReadings[$day][9] = $mapping;
+                                                } elseif ($hour >= 12 && $hour < 15) {
+                                                    $groupedReadings[$day][13] = $mapping;
+                                                } else {
+                                                    $groupedReadings[$day][16] = $mapping;
+                                                }
                                             }
                                         }
                                     @endphp

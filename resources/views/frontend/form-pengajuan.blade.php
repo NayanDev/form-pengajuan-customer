@@ -308,8 +308,8 @@
                     
                     <!-- Upload Dokumen -->
                     <div class="col-12">
-                        <label for="dokumen_pendukung" class="form-label">Upload Dokumen Pendukung</label>
-                        <input class="form-control" type="file" id="dokumen_pendukung" name="dokumen_pendukung" accept=".pdf">
+                        <label for="dokumen_pendukung" class="form-label required-label">Upload Dokumen Pendukung</label>
+                        <input class="form-control" type="file" id="dokumen_pendukung" name="dokumen_pendukung" accept=".pdf" required>
                         <div class="form-text">Hanya file PDF dengan ukuran maksimum 3MB.</div>
                         <div id="file-error" class="text-danger mt-2" style="display: none;">
                             Ukuran file maksimum adalah 3MB.

@@ -26,7 +26,7 @@ class TempMonitoring extends Model
 
     public function getBtnPrintAttribute()
     {
-        $html = "<a href='" . url('mapping-suhu') . "?mapping_study=" . $this->id ."&category=monitoring' target='_blank' class='btn btn-outline-primary btn-sm radius-6' style='margin:1px;'>
+        $html = "<a href='" . url('monitoring-suhu') . "?mapping_study=" . $this->id ."&category=monitoring' target='_blank' class='btn btn-outline-primary btn-sm radius-6' style='margin:1px;'>
                     <i class='ti ti-eye'></i>
                 </a>";
 

@@ -19,13 +19,13 @@
                                 <div class="table-responsive">
                                     <table>
                                         <tr class="border">
-                                            <td colspan="4">
+                                            <td colspan="11">
                                                 <img src="{{ asset('img/long-logo-spt.png') }}" alt="Logo SPT" height="70px">
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4">
-                                                <table class="noborder">
+                                            <td colspan="11">
+                                                <table class="noborder" style="width:100%">
                                                     <tr>
                                                         <td width="15%">Lokasi</td>
                                                         <td width="3%">:</td>
@@ -76,15 +76,17 @@
                                             </td>
                                         </tr> --}}
                                         <tr>
-                                            <td width="10%" rowspan="2" class="border text-center">Tgl</td>
-                                            <td width="20%" class="border text-center">09.00</td>
-                                            <td width="20%" class="border text-center">13.00</td>
-                                            <td width="20%" class="border text-center">16.00</td>
+                                            <td  rowspan="2" class="border text-center">Tgl</td>
+                                            @for ($jam = 8; $jam <= 17; $jam++)
+                                                <td width="10%" class="border text-center">
+                                                    {{ str_pad($jam, 2, '0', STR_PAD_LEFT) }}.00
+                                                </td>
+                                            @endfor
                                         </tr>
                                         <tr>
-                                            <td class="border text-center">T (°C)</td>
-                                            <td class="border text-center">T (°C)</td>
-                                            <td class="border text-center">T (°C)</td>
+                                            @for($no = 0; $no <= 9; $no++)
+                                                <td class="border text-center">T (°C)</td>
+                                            @endfor
                                         </tr>
                                         {{-- Full 1 month - Optimized Version --}}
                                         @php
@@ -101,48 +103,50 @@
                                                 // Untuk kategori monitoring, gunakan readings dari MonitoringPoint
                                                 foreach($mapping_study->readings as $reading) {
                                                     $date = \Carbon\Carbon::parse($reading->recorded_at);
+                                                    
+                                                    // Filter hanya data di bulan dan tahun yang dipilih
+                                                    if ($date->year != $year || $date->month != $month) {
+                                                        continue;
+                                                    }
+                                                    
                                                     $day = $date->day;
                                                     $hour = (int) $date->format('H');
                                                     
                                                     if (!isset($groupedReadings[$day])) {
-                                                        $groupedReadings[$day] = [
-                                                            9 => null,
-                                                            13 => null,
-                                                            16 => null
-                                                        ];
+                                                        $groupedReadings[$day] = [];
+                                                        for ($h = 8; $h <= 17; $h++) {
+                                                            $groupedReadings[$day][$h] = null;
+                                                        }
                                                     }
                                                     
-                                                    // Map to closest time slot
-                                                    if ($hour >= 0 && $hour < 12) {
-                                                        $groupedReadings[$day][9] = $reading;
-                                                    } elseif ($hour >= 12 && $hour < 15) {
-                                                        $groupedReadings[$day][13] = $reading;
-                                                    } else {
-                                                        $groupedReadings[$day][16] = $reading;
+                                                    // Store reading by exact hour (8-17)
+                                                    if ($hour >= 8 && $hour <= 17) {
+                                                        $groupedReadings[$day][$hour] = $reading;
                                                     }
                                                 }
                                             } else {
                                                 // Untuk kategori mapping, gunakan mappings seperti biasa
                                                 foreach($mapping_study->mappings as $mapping) {
                                                     $date = \Carbon\Carbon::parse($mapping->recorded_at);
+                                                    
+                                                    // Filter hanya data di bulan dan tahun yang dipilih
+                                                    if ($date->year != $year || $date->month != $month) {
+                                                        continue;
+                                                    }
+                                                    
                                                     $day = $date->day;
                                                     $hour = (int) $date->format('H');
                                                     
                                                     if (!isset($groupedReadings[$day])) {
-                                                        $groupedReadings[$day] = [
-                                                            9 => null,
-                                                            13 => null,
-                                                            16 => null
-                                                        ];
+                                                        $groupedReadings[$day] = [];
+                                                        for ($h = 8; $h <= 17; $h++) {
+                                                            $groupedReadings[$day][$h] = null;
+                                                        }
                                                     }
                                                     
-                                                    // Map to closest time slot
-                                                    if ($hour >= 0 && $hour < 12) {
-                                                        $groupedReadings[$day][9] = $mapping;
-                                                    } elseif ($hour >= 12 && $hour < 15) {
-                                                        $groupedReadings[$day][13] = $mapping;
-                                                    } else {
-                                                        $groupedReadings[$day][16] = $mapping;
+                                                    // Store mapping by exact hour (8-17)
+                                                    if ($hour >= 8 && $hour <= 17) {
+                                                        $groupedReadings[$day][$hour] = $mapping;
                                                     }
                                                 }
                                             }
@@ -156,38 +160,18 @@
                                         <tr>
                                             <td class="border text-center">{{ $day }}</td>
                                             
-                                            {{-- Jam 09.00 --}}
+                                            {{-- Loop untuk jam 08.00 - 17.00 --}}
+                                            @for ($jam = 8; $jam <= 17; $jam++)
                                             <td class="border text-center">
-                                                @if(isset($groupedReadings[$day][9]) && $groupedReadings[$day][9])
-                                                    {{ number_format($groupedReadings[$day][9]->value, 1) }}°C <br>
-                                                    <small>{{ $groupedReadings[$day][9]->user->name ?? 'N/A' }}</small> <br>
-                                                    <small>{{ \Carbon\Carbon::parse($groupedReadings[$day][9]->recorded_at)->format('H:i') }}</small>
+                                                @if(isset($groupedReadings[$day][$jam]) && $groupedReadings[$day][$jam])
+                                                    {{ number_format($groupedReadings[$day][$jam]->value, 1) }}°C <br>
+                                                    <small>{{ $groupedReadings[$day][$jam]->user->name ?? 'N/A' }}</small> <br>
+                                                    <small>{{ \Carbon\Carbon::parse($groupedReadings[$day][$jam]->recorded_at)->format('H:i') }}</small>
                                                 @else
                                                     {{ $isFuture ? '' : '-' }}
                                                 @endif
                                             </td>
-                                            
-                                            {{-- Jam 13.00 --}}
-                                            <td class="border text-center">
-                                                @if(isset($groupedReadings[$day][13]) && $groupedReadings[$day][13])
-                                                    {{ number_format($groupedReadings[$day][13]->value, 1) }}°C <br>
-                                                    <small>{{ $groupedReadings[$day][13]->user->name ?? 'N/A' }}</small> <br>
-                                                    <small>{{ \Carbon\Carbon::parse($groupedReadings[$day][13]->recorded_at)->format('H:i') }}</small>
-                                                @else
-                                                    {{ $isFuture ? '' : '-' }}
-                                                @endif
-                                            </td>
-                                            
-                                            {{-- Jam 16.00 --}}
-                                            <td class="border text-center">
-                                                @if(isset($groupedReadings[$day][16]) && $groupedReadings[$day][16])
-                                                    {{ number_format($groupedReadings[$day][16]->value, 1) }}°C <br>
-                                                    <small>{{ $groupedReadings[$day][16]->user->name ?? 'N/A' }}</small> <br>
-                                                    <small>{{ \Carbon\Carbon::parse($groupedReadings[$day][16]->recorded_at)->format('H:i') }}</small>
-                                                @else
-                                                    {{ $isFuture ? '' : '-' }}
-                                                @endif
-                                            </td>
+                                            @endfor
                                         </tr>
                                         @endfor
                                     </table>

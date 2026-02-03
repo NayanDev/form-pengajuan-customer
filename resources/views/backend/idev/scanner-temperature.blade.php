@@ -266,15 +266,15 @@
                     document.getElementById('formCard').style.display = 'block';
                     
                     // Show today's status
-                    if (response.data.today_status) {
-                        let statusHtml = '<div class="row">';
-                        statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.pagi ? 'bg-success-subtle' : 'bg-light') + '">Pagi (00-12): ' + (response.data.today_status.pagi ? response.data.today_status.pagi : 'Belum') + '</span></div>';
-                        statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.siang ? 'bg-success-subtle' : 'bg-light') + '">Siang (12-15): ' + (response.data.today_status.siang ? response.data.today_status.siang : 'Belum') + '</span></div>';
-                        statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.sore ? 'bg-success-subtle' : 'bg-light') + '">Sore (15-24): ' + (response.data.today_status.sore ? response.data.today_status.sore : 'Belum') + '</span></div>';
-                        statusHtml += '</div>';
-                        document.getElementById('todayStatusContent').innerHTML = statusHtml;
-                        document.getElementById('todayStatusAlert').style.display = 'block';
-                    }
+                    // if (response.data.today_status) {
+                    //     let statusHtml = '<div class="row">';
+                    //     statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.pagi ? 'bg-success-subtle' : 'bg-light') + '">Pagi (00-12): ' + (response.data.today_status.pagi ? response.data.today_status.pagi : 'Belum') + '</span></div>';
+                    //     statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.siang ? 'bg-success-subtle' : 'bg-light') + '">Siang (12-15): ' + (response.data.today_status.siang ? response.data.today_status.siang : 'Belum') + '</span></div>';
+                    //     statusHtml += '<div class="col-4"><span class="badge text-dark ' + (response.data.today_status.sore ? 'bg-success-subtle' : 'bg-light') + '">Sore (15-24): ' + (response.data.today_status.sore ? response.data.today_status.sore : 'Belum') + '</span></div>';
+                    //     statusHtml += '</div>';
+                    //     document.getElementById('todayStatusContent').innerHTML = statusHtml;
+                    //     document.getElementById('todayStatusAlert').style.display = 'block';
+                    // }
                     
                     // Load recent readings
                     if (response.data.recent_readings && response.data.recent_readings.length > 0) {

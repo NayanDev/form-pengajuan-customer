@@ -56,6 +56,11 @@ class TempMonitoringController extends DefaultController
                     ['name' => 'Description', 'column' => 'description'], 
             ]
         ];
+
+
+        $this->importStyles = [
+            ['source' => asset('custom/css/monitoring-suhu.css')],
+        ];
     }
 
 
@@ -216,33 +221,24 @@ class TempMonitoringController extends DefaultController
                     ->whereDate('recorded_at', $today)
                     ->get();
 
-                $timeRangeStatus = [
-                    'pagi' => null,
-                    'siang' => null,
-                    'sore' => null
-                ];
+                $timeRangeStatus = [];
+                for ($h = 8; $h <= 17; $h++) {
+                    $timeRangeStatus[$h] = null;
+                }
 
                 // Check monitoring readings
                 foreach ($monitoringReadingsToday as $reading) {
                     $hour = (int) $reading->recorded_at->format('H');
-                    if ($hour >= 0 && $hour < 12 && !$timeRangeStatus['pagi']) {
-                        $timeRangeStatus['pagi'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 12 && $hour < 15 && !$timeRangeStatus['siang']) {
-                        $timeRangeStatus['siang'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 15 && !$timeRangeStatus['sore']) {
-                        $timeRangeStatus['sore'] = $reading->recorded_at->format('H:i');
+                    if ($hour >= 8 && $hour <= 17 && !$timeRangeStatus[$hour]) {
+                        $timeRangeStatus[$hour] = $reading->recorded_at->format('H:i');
                     }
                 }
                 
                 // Check mapping readings
                 foreach ($mappingReadingsToday as $reading) {
                     $hour = (int) $reading->recorded_at->format('H');
-                    if ($hour >= 0 && $hour < 12 && !$timeRangeStatus['pagi']) {
-                        $timeRangeStatus['pagi'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 12 && $hour < 15 && !$timeRangeStatus['siang']) {
-                        $timeRangeStatus['siang'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 15 && !$timeRangeStatus['sore']) {
-                        $timeRangeStatus['sore'] = $reading->recorded_at->format('H:i');
+                    if ($hour >= 8 && $hour <= 17 && !$timeRangeStatus[$hour]) {
+                        $timeRangeStatus[$hour] = $reading->recorded_at->format('H:i');
                     }
                 }
 
@@ -301,33 +297,24 @@ class TempMonitoringController extends DefaultController
                     ->whereDate('recorded_at', $today)
                     ->get();
 
-                $timeRangeStatus = [
-                    'pagi' => null,
-                    'siang' => null,
-                    'sore' => null
-                ];
+                $timeRangeStatus = [];
+                for ($h = 8; $h <= 17; $h++) {
+                    $timeRangeStatus[$h] = null;
+                }
 
                 // Check monitoring readings
                 foreach ($monitoringReadingsToday as $reading) {
                     $hour = (int) $reading->recorded_at->format('H');
-                    if ($hour >= 0 && $hour < 12 && !$timeRangeStatus['pagi']) {
-                        $timeRangeStatus['pagi'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 12 && $hour < 15 && !$timeRangeStatus['siang']) {
-                        $timeRangeStatus['siang'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 15 && !$timeRangeStatus['sore']) {
-                        $timeRangeStatus['sore'] = $reading->recorded_at->format('H:i');
+                    if ($hour >= 8 && $hour <= 17 && !$timeRangeStatus[$hour]) {
+                        $timeRangeStatus[$hour] = $reading->recorded_at->format('H:i');
                     }
                 }
                 
                 // Check mapping readings
                 foreach ($mappingReadingsToday as $reading) {
                     $hour = (int) $reading->recorded_at->format('H');
-                    if ($hour >= 0 && $hour < 12 && !$timeRangeStatus['pagi']) {
-                        $timeRangeStatus['pagi'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 12 && $hour < 15 && !$timeRangeStatus['siang']) {
-                        $timeRangeStatus['siang'] = $reading->recorded_at->format('H:i');
-                    } elseif ($hour >= 15 && !$timeRangeStatus['sore']) {
-                        $timeRangeStatus['sore'] = $reading->recorded_at->format('H:i');
+                    if ($hour >= 8 && $hour <= 17 && !$timeRangeStatus[$hour]) {
+                        $timeRangeStatus[$hour] = $reading->recorded_at->format('H:i');
                     }
                 }
 
@@ -374,24 +361,25 @@ class TempMonitoringController extends DefaultController
             $value = $request->input('value');
             $recordedAt = $request->input('recorded_at');
             $recordedDate = date('Y-m-d', strtotime($recordedAt));
-            $recordedHour = date('H', strtotime($recordedAt));
+            $recordedHour = (int) date('H', strtotime($recordedAt));
 
-            // Determine time range
-            if ($recordedHour >= 0 && $recordedHour < 12) {
-                $timeRange = 'pagi';
-                $timeRangeLabel = '00:00 - 11:59';
-                $startTime = $recordedDate . ' 00:00:00';
-                $endTime = $recordedDate . ' 11:59:59';
-            } elseif ($recordedHour >= 12 && $recordedHour < 15) {
-                $timeRange = 'siang';
-                $timeRangeLabel = '12:00 - 14:59';
-                $startTime = $recordedDate . ' 12:00:00';
-                $endTime = $recordedDate . ' 14:59:59';
+            // Determine time range based on exact hour (8-17 for hourly tracking)
+            if ($recordedHour >= 8 && $recordedHour <= 17) {
+                // Hourly tracking from 08:00 to 17:00
+                $timeRangeLabel = str_pad($recordedHour, 2, '0', STR_PAD_LEFT) . ':00';
+                $startTime = $recordedDate . ' ' . str_pad($recordedHour, 2, '0', STR_PAD_LEFT) . ':00:00';
+                $endTime = $recordedDate . ' ' . str_pad($recordedHour, 2, '0', STR_PAD_LEFT) . ':59:59';
             } else {
-                $timeRange = 'sore';
-                $timeRangeLabel = '15:00 - 23:59';
-                $startTime = $recordedDate . ' 15:00:00';
-                $endTime = $recordedDate . ' 23:59:59';
+                // For hours outside 8-17, use broader time ranges
+                if ($recordedHour >= 0 && $recordedHour < 8) {
+                    $timeRangeLabel = '00:00 - 07:59';
+                    $startTime = $recordedDate . ' 00:00:00';
+                    $endTime = $recordedDate . ' 07:59:59';
+                } else {
+                    $timeRangeLabel = '18:00 - 23:59';
+                    $startTime = $recordedDate . ' 18:00:00';
+                    $endTime = $recordedDate . ' 23:59:59';
+                }
             }
 
             // Get location_id from point
@@ -642,6 +630,105 @@ class TempMonitoringController extends DefaultController
         ];
 
         return $fields;
+    }
+
+
+    protected function MonitoringSuhu()
+    {
+        $idMapStudy = request('mapping_study');
+        $category = request('category');
+        $year = request('year', now()->year);
+        $month = request('month', now()->month);
+        
+        if($category === 'mapping') {
+            $titleSuhu = "Mapping Suhu";
+            $mappingStudy = Mapping::findOrfail($idMapStudy);
+            $mappingStudyReading = Mapping::where('id', $idMapStudy)->get();
+
+            // Hitung min, max, avg dari mapping study reading
+            $readings = MappingStudyReading::whereHas('mappingStudyPoint', function($query) use ($idMapStudy) {
+                $query->where('mapping_study_id', $idMapStudy);
+            })->pluck('value');
+
+            $minValue = $readings->min();
+            $maxValue = $readings->max();
+            $avgValue = $readings->avg();
+
+        } elseif($category === 'monitoring') {
+            $titleSuhu = "Monitoring Suhu";
+            $mappingStudy = TempMonitoring::with(['readings' => function($query) use ($year, $month) {
+                $query->with('user')
+                    ->whereYear('recorded_at', $year)
+                    ->whereMonth('recorded_at', $month)
+                    ->orderBy('recorded_at');
+            }, 'location.warehouse'])->findOrfail($idMapStudy);
+            $mappingStudyReading = TempMonitoring::where('id', $idMapStudy)->first();
+
+            // Hitung min, max, avg dari monitoring reading
+            $readings = MonitoringReading::where('monitoring_point_id', $mappingStudyReading->id)
+                ->whereYear('recorded_at', $year)
+                ->whereMonth('recorded_at', $month)
+                ->pluck('value');
+
+            $minValue = $readings->min();
+            $maxValue = $readings->max();
+            $avgValue = $readings->avg();
+        }
+        
+
+        $baseUrlExcel = route($this->generalUri.'.export-excel-default');
+        $baseUrlPdf = route($this->generalUri.'.export-pdf-default');
+
+        $moreActions = [
+            [
+                'key' => 'import-excel-default',
+                'name' => 'Import Excel',
+                'html_button' => "<button id='import-excel' type='button' class='btn btn-sm btn-info radius-6' href='#' data-bs-toggle='modal' data-bs-target='#modalImportDefault' title='Import Excel' ><i class='ti ti-upload'></i></button>"
+            ],
+            [
+                'key' => 'export-excel-default',
+                'name' => 'Export Excel',
+                'html_button' => "<a id='export-excel' data-base-url='".$baseUrlExcel."' class='btn btn-sm btn-success radius-6' target='_blank' href='" . $baseUrlExcel . "'  title='Export Excel'><i class='ti ti-cloud-download'></i></a>"
+            ],
+            [
+                'key' => 'export-pdf-default',
+                'name' => 'Export Pdf',
+                'html_button' => "<a id='export-pdf' data-base-url='".$baseUrlPdf."' class='btn btn-sm btn-danger radius-6' target='_blank' href='" . $baseUrlPdf . "' title='Export PDF'><i class='ti ti-file'></i></a>"
+            ],
+        ];
+
+        $permissions =  $this->arrPermissions;
+        if ($this->dynamicPermission) {
+            $permissions = (new Constant())->permissionByMenu($this->generalUri);
+        }
+        $layout = (request('from_ajax') && request('from_ajax') == true) ? 'easyadmin::backend.idev.list_drawer_ajax' : 'backend.idev.list_drawer_monitoring_suhu';
+        if(isset($this->drawerLayout)){
+            $layout = $this->drawerLayout;
+        }
+        $data['permissions'] = $permissions;
+        $data['more_actions'] = $moreActions;
+        $data['headerLayout'] = $this->pageHeaderLayout;
+        $data['table_headers'] = $this->tableHeaders;
+        $data['title'] = $titleSuhu;
+        $data['uri_key'] = $this->generalUri;
+        $data['uri_list_api'] = route($this->generalUri . '.listapi');
+        $data['uri_create'] = route($this->generalUri . '.create');
+        $data['url_store'] = route($this->generalUri . '.store');
+        $data['fields'] = $this->fields();
+        $data['edit_fields'] = $this->fields('edit');
+        $data['actionButtonViews'] = $this->actionButtonViews;
+        $data['templateImportExcel'] = "#";
+        $data['import_scripts'] = $this->importScripts;
+        $data['import_styles'] = $this->importStyles;
+        $data['filters'] = $this->filters();
+
+        $data['mapping_study'] = $mappingStudy;
+        $data['mapping_study_reading'] = $mappingStudyReading;
+        $data['min_value'] = $minValue;
+        $data['max_value'] = $maxValue;
+        $data['avg_value'] = $avgValue;
+        
+        return view($layout, $data);
     }
 
 

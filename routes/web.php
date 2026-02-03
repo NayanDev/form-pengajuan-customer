@@ -146,6 +146,8 @@ Route::group(['middleware' => ['web', 'auth']], function () {
     Route::post('scanner-temperature/store', [TempMonitoringController::class, 'storeTemperature'])->name('scanner-temperature.store');
 
     // Route Mapping
-    Route::get('mapping-suhu', [MappingController::class, 'monitoringSuhu'])->name('monitoring-suhu');
+    Route::get('mapping-suhu', [MappingController::class, 'monitoringSuhu'])->name('mapping-suhu');
     Route::get('mapping-pdf', [MappingController::class, 'generatePDF'])->name('mapping.pdf');
+    Route::get('mapping-category', [MappingController::class, 'CategoryMapping'])->name('mapping.category');
+    Route::get('monitoring-suhu', [TempMonitoringController::class, 'MonitoringSuhu'])->name('monitoring-suhu');
 });
